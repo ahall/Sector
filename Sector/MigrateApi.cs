@@ -29,13 +29,7 @@ namespace Sector
             return PostgreSQLConfiguration.PostgreSQL82.ConnectionString(connectionStr);
         }
 
-        /// <summary>
-        /// Tries the version control.
-        /// </summary>
-        /// <returns>
-        /// True if we should version control the db, false otherwise.
-        /// </returns>
-        public bool TryVersionControl(string repositoryPath, string repositoryId)
+        public bool IsVersionControlled(Repository repository)
         {
             // First make sure we're not already under version control.
             bool alreadyVersioned = true;
@@ -44,7 +38,7 @@ namespace Sector
                 try
                 {
                     MigrateVersion mgv = session.QueryOver<MigrateVersion>()
-                        .Where(m => m.RepositoryId == repositoryId)
+                        .Where(m => m.RepositoryId == repository.RepositoryId)
                         .SingleOrDefault();
                     if (mgv == null)
                         alreadyVersioned = false;
@@ -63,7 +57,7 @@ namespace Sector
             new NHibernate.Tool.hbm2ddl.SchemaExport(cfg).Create(script: false, export: true);
         }
 
-        public void VersionControl(string repositoryPath, string repositoryId)
+        public void VersionControl(Repository repository)
         {
             FluentConfiguration tempDbCfg = Fluently.Configure().Database(BuildDatabase());
             tempDbCfg.Mappings(x => x.FluentMappings.Add<MigrateVersionMap>());
@@ -75,11 +69,29 @@ namespace Sector
             using (ISession session = tempDbFactory.OpenSession())
             using (ITransaction transaction = session.BeginTransaction())
             {
-                MigrateVersion mgv = new MigrateVersion(repositoryId: repositoryId,
-                                                        repositoryPath: repositoryPath,
+                MigrateVersion mgv = new MigrateVersion(repositoryId: repository.RepositoryId,
+                                                        repositoryPath: repository.RepositoryPath,
                                                         version: 0);
                 session.Save(mgv);
                 transaction.Commit();
+            }
+
+            // Clean-up, the garbage collector will do it and will also happen when the app exists
+            // but for the sake of clean-ness and if the app runs for a long time.
+            tempDbFactory.Dispose();
+        }
+
+        public int GetDbVersion(Repository repository)
+        {
+            using (ISession session = dbFactory.OpenSession())
+            {
+                MigrateVersion mgv = session.QueryOver<MigrateVersion>()
+                    .Where(m => m.RepositoryId == repository.RepositoryId)
+                    .SingleOrDefault();
+                if (mgv == null)
+                    throw new Exception("Unable to fetch the db version");
+
+                return mgv.Version;
             }
         }
     }

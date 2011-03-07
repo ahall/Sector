@@ -65,12 +65,18 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Libs\Remotion.Data.Linq.dll</HintPath>
     </Reference>
+    <Reference Include="Nini, Version=1.1.0.0, Culture=neutral, PublicKeyToken=c9892194e1b9ec1b">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Libs\Nini.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Entities\MigrateVersion.cs" />
     <Compile Include="Mappings\MigrateVersionMap.cs" />
     <Compile Include="MigrateApi.cs" />
+    <Compile Include="Repository.cs" />
+    <Compile Include="IMigrateApi.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

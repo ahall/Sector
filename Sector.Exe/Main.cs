@@ -75,32 +75,28 @@ namespace Sector.Exe
             }
 
             // Now parse sector.cfg
-            string configPath = Path.Combine(repoPath, "sector.cfg");
-            IConfigSource configSource = new IniConfigSource(configPath);
-            var mainConfig = configSource.Configs["main"];
-            string repositoryId = mainConfig.GetString("repository_id");
-
+            Repository repository = new Repository(repoPath);
             migrateApi = new MigrateApi(DBURL);
 
             string command = extraArgs[0];
             if (command == "migrate_version_control")
             {
                 // First make sure we're not already under version control.
-                bool alreadyVersioned = migrateApi.TryVersionControl(repositoryPath: repoPath,
-                                                                     repositoryId: repositoryId);
+                bool alreadyVersioned = migrateApi.IsVersionControlled(repository);
                 if (alreadyVersioned)
                 {
                     Console.WriteLine("Already Versioned, delete the tables and retry");
                     return;
                 }
 
-                migrateApi.VersionControl(repositoryPath: repoPath,
-                                          repositoryId: repositoryId);
+                migrateApi.VersionControl(repository);
             }
-
-            Console.WriteLine(command);
+            else if (command == "migrate_db_version")
+            {
+                int dbVersion = migrateApi.GetDbVersion(repository);
+                Console.WriteLine(dbVersion.ToString());
+            }
         }
-
 
         public static void Main(string[] args)
         {
