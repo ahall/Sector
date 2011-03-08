@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NDesk.Options;
 using Nini.Config;
+using Sector;
 using System.IO;
 
 namespace Sector.Exe
@@ -9,9 +10,8 @@ namespace Sector.Exe
     class MainClass
     {
         private List<string> extraArgs { get; set; }
-        private const string DBURL = @"Server=localhost;Database=sector;User Id=ahall;Password=temp123";
         private OptionSet optionSet;
-        private Sector.MigrateApi migrateApi;
+        private MigrateApi migrateApi;
 
         public MainClass()
         {
@@ -76,7 +76,9 @@ namespace Sector.Exe
 
             // Now parse sector.cfg
             Repository repository = new Repository(repoPath);
-            migrateApi = new MigrateApi(DBURL);
+            ISectorDb sectorDb = new SectorDb(server: "localhost", username: "ahall",
+                                              password: "temp123", database: "sector");
+            migrateApi = new MigrateApi(sectorDb);
 
             string command = extraArgs[0];
             if (command == "migrate_version_control")
