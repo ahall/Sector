@@ -10,7 +10,7 @@ using NHibernate.Tool.hbm2ddl;
 
 namespace Sector
 {
-    public class MigrateApi
+    public class MigrateApi : IMigrateApi
     {
         private ISectorDb sectorDb;
 
@@ -19,7 +19,7 @@ namespace Sector
             this.sectorDb = sectorDb;
         }
 
-        public bool IsVersionControlled(Repository repository)
+        public bool IsVersionControlled(IRepository repository)
         {
             // First make sure we're not already under version control.
             bool alreadyVersioned = true;
@@ -42,7 +42,7 @@ namespace Sector
             return alreadyVersioned;
         }
 
-        public void VersionControl(Repository repository)
+        public void VersionControl(IRepository repository)
         {
             // Create the migration table first.
             sectorDb.CreateMigrationTable();
@@ -60,7 +60,7 @@ namespace Sector
             }
         }
 
-        public int GetDbVersion(Repository repository)
+        public int GetDbVersion(IRepository repository)
         {
             using (ISession session = sectorDb.DbFactory.OpenSession())
             {

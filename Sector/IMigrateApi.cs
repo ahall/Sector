@@ -16,7 +16,7 @@ namespace Sector
         /// <param name='repository'>
         /// If set to <c>true</c> repository.
         /// </param>
-        bool IsVersionControlled(Repository repository);
+        bool IsVersionControlled(IRepository repository);
 
         /// <summary>
         /// Attempt to version control the database, one should call
@@ -26,7 +26,7 @@ namespace Sector
         /// <param name='repository'>
         /// Repository.
         /// </param>
-        void VersionControl(Repository repository);
+        void VersionControl(IRepository repository);
 
         /// <summary>
         /// Gets the current db version.
@@ -37,7 +37,7 @@ namespace Sector
         /// <param name='repository'>
         /// Repository.
         /// </param>
-        int GetDbVersion(Repository repository);
+        int GetDbVersion(IRepository repository);
     }
 }
 

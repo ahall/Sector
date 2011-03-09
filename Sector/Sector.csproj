@@ -79,6 +79,7 @@
     <Compile Include="IMigrateApi.cs" />
     <Compile Include="ISectorDb.cs" />
     <Compile Include="SectorDb.cs" />
+    <Compile Include="IRepository.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

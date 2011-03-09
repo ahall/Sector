@@ -27,3 +27,4 @@ autom4te.cache
 src/test-results
 *.orig
 *.test-cache
+test-results

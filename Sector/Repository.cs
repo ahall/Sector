@@ -7,7 +7,7 @@ namespace Sector
     /// <summary>
     /// A Repository that contains the SQL scripts we need.
     /// </summary>
-    public class Repository
+    public class Repository : IRepository
     {
         public string RepositoryId { get; private set; }
         public string RepositoryPath { get; private set; }
