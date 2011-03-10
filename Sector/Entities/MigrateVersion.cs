@@ -15,7 +15,7 @@ namespace Sector.Entities
         public virtual string RepositoryId { get; private set; }
 
         public virtual string RepositoryPath { get; private set; }
-        public virtual int Version { get; private set; }
+        public virtual int Version { get; set; }
 
         protected MigrateVersion()
         {
