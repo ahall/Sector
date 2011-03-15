@@ -14,7 +14,17 @@ namespace Sector.Tests
         }
 
         [Test()]
-        [ExpectedException(typeof(Exception))]
+        public void HasVersion()
+        {
+            var repository = TestUtils.MakeRepository();
+            Assert.IsTrue(repository.HasVersion(1));
+            Assert.IsTrue(repository.HasVersion(2));
+            Assert.IsFalse(repository.HasVersion(3));
+            Assert.IsFalse(repository.HasVersion(0));
+        }
+
+        [Test()]
+        [ExpectedException(typeof(SectorException))]
         public void GetUpgradeSql_Invalid()
         {
             var repository = TestUtils.MakeRepository();
@@ -44,7 +54,7 @@ namespace Sector.Tests
         }
 
         [Test()]
-        [ExpectedException(typeof(Exception))]
+        [ExpectedException(typeof(SectorException))]
         public void GetDowngradeSql_Invalid()
         {
             var repository = TestUtils.MakeRepository();

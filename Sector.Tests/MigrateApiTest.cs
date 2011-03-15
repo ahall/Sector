@@ -8,6 +8,7 @@ using NHibernate.Tool.hbm2ddl;
 using FluentNHibernate.Cfg;
 using Sector.Mappings;
 using System.IO;
+using NHibernate.Exceptions;
 
 namespace Sector.Tests
 {
@@ -81,7 +82,7 @@ namespace Sector.Tests
         }
 
         [Test()]
-        [ExpectedException(typeof(Exception))]
+        [ExpectedException(typeof(SectorException))]
         public void GetDbVersion_EmptyDb()
         {
             var sectorDb = TestUtils.MakeSectorDb();
@@ -125,7 +126,131 @@ namespace Sector.Tests
             }
         }
 
+        [Test()]
+        public void Upgrade_Incremental()
+        {
+            var sectorDb = TestUtils.MakeSectorDb();
+            var repository = TestUtils.MakeRepository();
 
+            MigrateApi migrateApi = new MigrateApi(sectorDb);
+            migrateApi.VersionControl(repository);
+
+            using (ISession session = dbFactory.OpenSession())
+            {
+                Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
+                Assert.Throws<GenericADOException>(delegate {
+                    session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
+                });
+
+                migrateApi.Upgrade(repository, 1);
+                session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
+                Assert.Throws<GenericADOException>(delegate {
+                    session.CreateSQLQuery("SELECT * FROM moon;").ExecuteUpdate();
+                });
+
+                Assert.AreEqual(1, migrateApi.GetDbVersion(repository));
+                session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
+
+                migrateApi.Upgrade(repository, 2);
+                Assert.AreEqual(2, migrateApi.GetDbVersion(repository));
+                session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
+                session.CreateSQLQuery("SELECT * FROM moon;").ExecuteUpdate();
+
+                using (ITransaction transaction = session.BeginTransaction())
+                {
+                    session.CreateSQLQuery("DROP TABLE testie CASCADE;").ExecuteUpdate();
+                    session.CreateSQLQuery("DROP TABLE moon CASCADE;").ExecuteUpdate();
+                    transaction.Commit();
+                }
+            }
+        }
+
+        [Test()]
+        public void Upgrade_Straight()
+        {
+            var sectorDb = TestUtils.MakeSectorDb();
+            var repository = TestUtils.MakeRepository();
+
+            MigrateApi migrateApi = new MigrateApi(sectorDb);
+            migrateApi.VersionControl(repository);
+
+            using (ISession session = dbFactory.OpenSession())
+            {
+                Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
+                Assert.Throws<GenericADOException>(delegate {
+                    session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
+                });
+
+                migrateApi.Upgrade(repository, 2);
+                session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
+                session.CreateSQLQuery("SELECT * FROM moon;").ExecuteUpdate();
+                Assert.AreEqual(2, migrateApi.GetDbVersion(repository));
+
+                using (ITransaction transaction = session.BeginTransaction())
+                {
+                    session.CreateSQLQuery("DROP TABLE testie CASCADE;").ExecuteUpdate();
+                    session.CreateSQLQuery("DROP TABLE moon CASCADE;").ExecuteUpdate();
+                    transaction.Commit();
+                }
+            }
+        }
+
+        [Test()]
+        public void Downgrade_Straight()
+        {
+            var sectorDb = TestUtils.MakeSectorDb();
+            var repository = TestUtils.MakeRepository();
+
+            MigrateApi migrateApi = new MigrateApi(sectorDb);
+            migrateApi.VersionControl(repository);
+
+            using (ISession session = dbFactory.OpenSession())
+            {
+                migrateApi.Upgrade(repository, 2);
+                session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
+                session.CreateSQLQuery("SELECT * FROM moon;").ExecuteUpdate();
+                Assert.AreEqual(2, migrateApi.GetDbVersion(repository));
+
+                migrateApi.Downgrade(repository, 0);
+                Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
+                Assert.Throws<GenericADOException>(delegate {
+                    session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
+                    session.CreateSQLQuery("SELECT * FROM moon;").ExecuteUpdate();
+                });
+            }
+        }
+
+        [Test()]
+        public void Downgrade_Incremental()
+        {
+            var sectorDb = TestUtils.MakeSectorDb();
+            var repository = TestUtils.MakeRepository();
+
+            MigrateApi migrateApi = new MigrateApi(sectorDb);
+            migrateApi.VersionControl(repository);
+
+            using (ISession session = dbFactory.OpenSession())
+            {
+                migrateApi.Upgrade(repository, 2);
+                session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
+                session.CreateSQLQuery("SELECT * FROM moon;").ExecuteUpdate();
+                Assert.AreEqual(2, migrateApi.GetDbVersion(repository));
+
+                migrateApi.Downgrade(repository, 1);
+                Assert.AreEqual(1, migrateApi.GetDbVersion(repository));
+                session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
+                Assert.Throws<GenericADOException>(delegate {
+                    session.CreateSQLQuery("SELECT * FROM moon;").ExecuteUpdate();
+                });
+
+                migrateApi.Downgrade(repository, 0);
+                Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
+                Assert.Throws<GenericADOException>(delegate {
+                    session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
+                    session.CreateSQLQuery("SELECT * FROM moon;").ExecuteUpdate();
+                });
+            }
+        }
     }
 }
 

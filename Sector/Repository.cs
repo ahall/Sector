@@ -47,6 +47,11 @@ namespace Sector
             }
         }
 
+        public bool HasVersion(int version)
+        {
+            return versions.Contains(version);
+        }
+
         public int GetVersion()
         {
             return versions.Max();
@@ -55,7 +60,7 @@ namespace Sector
         public string GetUpgradeSql(int version)
         {
             if (!versions.Contains(version))
-                throw new Exception("Repository does not contain this version");
+                throw new SectorException("Repository does not contain this version");
 
             string filename = string.Format("{0}_upgrade.sql", version);
             string fullPath = Path.Combine(versionDir, filename);
@@ -65,7 +70,7 @@ namespace Sector
         public string GetDowngradeSql(int version)
         {
             if (!versions.Contains(version))
-                throw new Exception("Repository does not contain this version");
+                throw new SectorException("Repository does not contain this version");
 
             string filename = string.Format("{0}_downgrade.sql", version);
             string fullPath = Path.Combine(versionDir, filename);

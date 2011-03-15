@@ -8,6 +8,17 @@ namespace Sector
         string RepositoryPath { get; }
 
         /// <summary>
+        /// Is the version given in this repository?
+        /// </summary>
+        /// <returns>
+        /// <c>true</c> if this instance has version the specified version; otherwise, <c>false</c>.
+        /// </returns>
+        /// <param name='version'>
+        /// If set to <c>true</c> version.
+        /// </param>
+        bool HasVersion(int version);
+
+        /// <summary>
         /// Gets the version.
         /// </summary>
         /// <returns>

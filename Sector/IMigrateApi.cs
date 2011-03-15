@@ -38,6 +38,16 @@ namespace Sector
         /// Repository.
         /// </param>
         int GetDbVersion(IRepository repository);
+
+        /// <summary>
+        /// Upgrades to the version specified..
+        /// </summary>
+        void Upgrade(IRepository repository, int version);
+
+        /// <summary>
+        /// Downgrades to the version specified..
+        /// </summary>
+        void Downgrade(IRepository repository, int version);
     }
 }
 
