@@ -36,16 +36,19 @@
     <Reference Include="System" />
     <Reference Include="Nini, Version=1.1.0.0, Culture=neutral, PublicKeyToken=c9892194e1b9ec1b">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Libs\Nini.dll</HintPath>
+      <HintPath>..\..\Libs\Nini.dll</HintPath>
     </Reference>
     <Reference Include="NDesk.Options, Version=0.2.1.0, Culture=neutral, PublicKeyToken=null">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Libs\NDesk.Options.dll</HintPath>
+      <HintPath>..\..\Libs\NDesk.Options.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Main.cs" />
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="..\AssemblyVersion.cs">
+      <Link>AssemblyVersion.cs</Link>
+    </Compile>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
