@@ -5,7 +5,7 @@ using Nini.Config;
 using Sector;
 using System.IO;
 
-namespace Sector.Exe
+namespace Sector.Tool
 {
     class MainClass
     {
@@ -19,13 +19,13 @@ namespace Sector.Exe
 
         private void ShowHelp(OptionSet optionSet)
         {
-            Console.Error.WriteLine("Sector.exe [OPTIONS] command");
+            Console.Error.WriteLine("Sector.Tool.exe [OPTIONS] command");
             Console.Error.WriteLine("Supported commands:");
-            Console.Error.WriteLine("\tmigrate_version_control:\t\tPut the database under version control");
+            Console.Error.WriteLine("\tmigrate_version_control:\tPut the database under version control");
             Console.Error.WriteLine("\tmigrate_version:\t\tPrints the latest version available in the repository");
             Console.Error.WriteLine("\tmigrate_db_version:\t\tPrints version the database is at");
-            Console.Error.WriteLine("\tmigrate_upgrade <version>:\t\tUpgrade to the version given or latest if no version given");
-            Console.Error.WriteLine("\tmigrate_downgrade [version]:\t\tDowngrade to the version given");
+            Console.Error.WriteLine("\tmigrate_upgrade <version>:\tUpgrade to the version given or latest if no version given");
+            Console.Error.WriteLine("\tmigrate_downgrade [version]:\tDowngrade to the version given");
             Console.Error.WriteLine("Sector is a database migration tool");
             optionSet.WriteOptionDescriptions(Console.Error);
             Environment.Exit(-1);
