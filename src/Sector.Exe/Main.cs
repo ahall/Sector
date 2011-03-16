@@ -19,8 +19,14 @@ namespace Sector.Exe
 
         private void ShowHelp(OptionSet optionSet)
         {
-            Console.Error.WriteLine("program [OPTIONS]");
-            Console.Error.WriteLine("Sector is database migration tool");
+            Console.Error.WriteLine("Sector.exe [OPTIONS] command");
+            Console.Error.WriteLine("Supported commands:");
+            Console.Error.WriteLine("\tmigrate_version_control:\t\tPut the database under version control");
+            Console.Error.WriteLine("\tmigrate_version:\t\tPrints the latest version available in the repository");
+            Console.Error.WriteLine("\tmigrate_db_version:\t\tPrints version the database is at");
+            Console.Error.WriteLine("\tmigrate_upgrade <version>:\t\tUpgrade to the version given or latest if no version given");
+            Console.Error.WriteLine("\tmigrate_downgrade [version]:\t\tDowngrade to the version given");
+            Console.Error.WriteLine("Sector is a database migration tool");
             optionSet.WriteOptionDescriptions(Console.Error);
             Environment.Exit(-1);
         }
@@ -29,6 +35,7 @@ namespace Sector.Exe
         {
             bool showHelp = false;
             string repoPath = string.Empty;
+            int? version = null;
 
             optionSet = new OptionSet()
                 .Add("?|help",
@@ -36,7 +43,10 @@ namespace Sector.Exe
                      option => showHelp = option != null)
                 .Add("repository-path=",
                      "Required: Full path to the repository path",
-                     option => repoPath = option);
+                     option => repoPath = option)
+                .Add("version=",
+                     "For upgrade/downgrade determines what version to go to",
+                     option => version = int.Parse(option));
 
             try
             {
@@ -81,22 +91,47 @@ namespace Sector.Exe
             migrateApi = new MigrateApi(sectorDb);
 
             string command = extraArgs[0];
-            if (command == "migrate_version_control")
+            switch (command)
             {
-                // First make sure we're not already under version control.
-                bool alreadyVersioned = migrateApi.IsVersionControlled(repository);
-                if (alreadyVersioned)
+                case "migrate_version_control":
                 {
-                    Console.WriteLine("Already Versioned, delete the tables and retry");
+                    migrateApi.VersionControl(repository);
+                    break;
+                }
+                case "migrate_db_version":
+                {
+                    int dbVersion = migrateApi.GetDbVersion(repository);
+                    Console.WriteLine(dbVersion.ToString());
+                    break;
+                }
+                case "migrate_version":
+                {
+                    int repoVersion = repository.GetVersion();
+                    Console.WriteLine(repoVersion.ToString());
+                    break;
+                }
+                case "migrate_upgrade":
+                {
+                    int upVersion = version.GetValueOrDefault(repository.GetVersion());
+                    migrateApi.Upgrade(repository, upVersion);
+                    break;
+                }
+                case "migrate_downgrade":
+                {
+                    if (!version.HasValue)
+                    {
+                        Console.WriteLine("Missing version for downgrade");
+                        return;
+                    }
+
+                    migrateApi.Downgrade(repository, version.Value);
+                    break;
+                }
+                default:
+                {
+                    Console.WriteLine("Invalid command");
                     return;
                 }
-
-                migrateApi.VersionControl(repository);
-            }
-            else if (command == "migrate_db_version")
-            {
-                int dbVersion = migrateApi.GetDbVersion(repository);
-                Console.WriteLine(dbVersion.ToString());
             }
         }
 

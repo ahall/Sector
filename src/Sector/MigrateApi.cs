@@ -21,35 +21,46 @@ namespace Sector
             this.sectorDb = sectorDb;
         }
 
-        public bool IsVersionControlled(IRepository repository)
+        private bool IsVersionControlled(IRepository repository, ISession session)
         {
             // First make sure we're not already under version control.
             bool alreadyVersioned = true;
-            using (ISession session = sectorDb.DbFactory.OpenSession())
+
+            try
             {
-                try
-                {
-                    MigrateVersion mgv = session.QueryOver<MigrateVersion>()
-                        .Where(m => m.RepositoryId == repository.RepositoryId)
-                        .SingleOrDefault();
-                    if (mgv == null)
-                        alreadyVersioned = false;
-                }
-                catch (Exception)
+                MigrateVersion mgv = session.QueryOver<MigrateVersion>()
+                    .Where(m => m.RepositoryId == repository.RepositoryId)
+                    .SingleOrDefault();
+                if (mgv == null)
                 {
                     alreadyVersioned = false;
                 }
+            }
+            catch (Exception)
+            {
+                alreadyVersioned = false;
             }
 
             return alreadyVersioned;
         }
 
+        public bool IsVersionControlled(IRepository repository)
+        {
+            using (ISession session = sectorDb.DbFactory.OpenSession())
+            {
+                return IsVersionControlled(repository, session);
+            }
+        }
+
         public void VersionControl(IRepository repository)
         {
+            if (IsVersionControlled(repository))
+            {
+                throw new SectorException("Already version controlled");
+            }
+
             // Create the migration table first.
             sectorDb.CreateMigrationTable();
-
-            Console.WriteLine("Versioning the db, setting version to 0");
 
             using (ISession session = sectorDb.DbFactory.OpenSession())
             using (ITransaction transaction = session.BeginTransaction())
@@ -79,6 +90,12 @@ namespace Sector
             {
                 return GetDbVersion(repository, session);
             }
+        }
+
+        public void Upgrade(IRepository repository)
+        {
+            int version = repository.GetVersion();
+            Upgrade(repository, version);
         }
 
         public void Upgrade(IRepository repository, int version)

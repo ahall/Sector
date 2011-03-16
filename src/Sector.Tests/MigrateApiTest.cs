@@ -58,27 +58,26 @@ namespace Sector.Tests
             MigrateApi migrateApi = new MigrateApi(sectorDb);
             Assert.IsFalse(migrateApi.IsVersionControlled(repository));
 
-            // No matter how often we do this, version control will always
-            // set the database to version 0.
-            for (int i = 0; i < 3; ++i)
+            migrateApi.VersionControl(repository);
+            Assert.IsTrue(migrateApi.IsVersionControlled(repository));
+            Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
+
+            using (ISession session = dbFactory.OpenSession())
             {
-                migrateApi.VersionControl(repository);
-                Assert.IsTrue(migrateApi.IsVersionControlled(repository));
-                Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
+                MigrateVersion migVer = session.QueryOver<MigrateVersion>()
+                    .Where(m => m.RepositoryId == repository.RepositoryId)
+                    .SingleOrDefault();
 
-                using (ISession session = dbFactory.OpenSession())
-                {
-                    MigrateVersion migVer = session.QueryOver<MigrateVersion>()
-                        .Where(m => m.RepositoryId == repository.RepositoryId)
-                        .SingleOrDefault();
-
-                    Assert.IsNotNull(migVer);
-                    Assert.AreEqual(repository.RepositoryId, migVer.RepositoryId);
-                    Assert.AreEqual(repository.RepositoryPath, migVer.RepositoryPath);
-                    Assert.AreEqual(0, migVer.Version);
-                }
+                Assert.IsNotNull(migVer);
+                Assert.AreEqual(repository.RepositoryId, migVer.RepositoryId);
+                Assert.AreEqual(repository.RepositoryPath, migVer.RepositoryPath);
+                Assert.AreEqual(0, migVer.Version);
             }
 
+            // Trying again results in SectorException.
+            Assert.Throws<SectorException>(delegate {
+                migrateApi.VersionControl(repository);
+            });
         }
 
         [Test()]
@@ -182,6 +181,36 @@ namespace Sector.Tests
                 });
 
                 migrateApi.Upgrade(repository, 2);
+                session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
+                session.CreateSQLQuery("SELECT * FROM moon;").ExecuteUpdate();
+                Assert.AreEqual(2, migrateApi.GetDbVersion(repository));
+
+                using (ITransaction transaction = session.BeginTransaction())
+                {
+                    session.CreateSQLQuery("DROP TABLE testie CASCADE;").ExecuteUpdate();
+                    session.CreateSQLQuery("DROP TABLE moon CASCADE;").ExecuteUpdate();
+                    transaction.Commit();
+                }
+            }
+        }
+
+        [Test()]
+        public void Upgrade_Straight_NoVersionGiven()
+        {
+            var sectorDb = TestUtils.MakeSectorDb();
+            var repository = TestUtils.MakeRepository();
+
+            MigrateApi migrateApi = new MigrateApi(sectorDb);
+            migrateApi.VersionControl(repository);
+
+            using (ISession session = dbFactory.OpenSession())
+            {
+                Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
+                Assert.Throws<GenericADOException>(delegate {
+                    session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
+                });
+
+                migrateApi.Upgrade(repository);
                 session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
                 session.CreateSQLQuery("SELECT * FROM moon;").ExecuteUpdate();
                 Assert.AreEqual(2, migrateApi.GetDbVersion(repository));

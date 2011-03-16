@@ -55,9 +55,9 @@
       <Project>{A364A54D-A54B-4F3C-8B08-AF81768B4379}</Project>
       <Name>Sector</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Sector.Exe\Sector.Exe.csproj">
+    <ProjectReference Include="..\Sector.Exe\SectorTool.csproj">
       <Project>{9E8FE38A-77E0-4A83-B997-C3C8E9441495}</Project>
-      <Name>Sector.Exe</Name>
+      <Name>SectorTool</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

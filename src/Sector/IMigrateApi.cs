@@ -19,9 +19,8 @@ namespace Sector
         bool IsVersionControlled(IRepository repository);
 
         /// <summary>
-        /// Attempt to version control the database, one should call
-        /// IsVersionControlled() first to make sure it's not already
-        /// version controlled.
+        /// Version control the database, if it is already version
+        /// controlled, a SectorException gets thrown.
         /// </summary>
         /// <param name='repository'>
         /// Repository.
@@ -38,6 +37,11 @@ namespace Sector
         /// Repository.
         /// </param>
         int GetDbVersion(IRepository repository);
+
+        /// <summary>
+        /// Upgrades to the latest available version.
+        /// </summary>
+        void Upgrade(IRepository repository);
 
         /// <summary>
         /// Upgrades to the version specified..

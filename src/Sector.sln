@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sector", "Sector\Sector.csproj", "{A364A54D-A54B-4F3C-8B08-AF81768B4379}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sector.Exe", "Sector.Exe\Sector.Exe.csproj", "{9E8FE38A-77E0-4A83-B997-C3C8E9441495}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SectorTool", "Sector.Exe\SectorTool.csproj", "{9E8FE38A-77E0-4A83-B997-C3C8E9441495}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sector.Tests", "Sector.Tests\Sector.Tests.csproj", "{D57FC2DC-EC28-48F9-872C-03C41F3FF020}"
 EndProject
@@ -27,6 +27,6 @@ Global
 		{D57FC2DC-EC28-48F9-872C-03C41F3FF020}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = Sector.Exe\Sector.Exe.csproj
+		StartupItem = Sector.Exe\SectorTool.csproj
 	EndGlobalSection
 EndGlobal

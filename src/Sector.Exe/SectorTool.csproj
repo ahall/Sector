@@ -8,7 +8,7 @@
     <ProjectGuid>{9E8FE38A-77E0-4A83-B997-C3C8E9441495}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>Sector.Exe</RootNamespace>
-    <AssemblyName>Sector</AssemblyName>
+    <AssemblyName>Sector.Exe</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
