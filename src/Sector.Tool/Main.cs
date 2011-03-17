@@ -4,6 +4,7 @@ using NDesk.Options;
 using Nini.Config;
 using Sector;
 using System.IO;
+using FluentNHibernate.Cfg.Db;
 
 namespace Sector.Tool
 {
@@ -86,8 +87,8 @@ namespace Sector.Tool
 
             // Now parse sector.cfg
             Repository repository = new Repository(repoPath);
-            ISectorDb sectorDb = new SectorDb(server: "localhost", username: "ahall",
-                                              password: "temp123", database: "sector");
+            ISectorDb sectorDb = new SectorDb(SQLiteConfiguration.Standard.UsingFile("/tmp/a.db"));
+
             migrateApi = new MigrateApi(sectorDb);
 
             string command = extraArgs[0];

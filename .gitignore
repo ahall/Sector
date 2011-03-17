@@ -28,3 +28,4 @@ src/test-results
 *.orig
 *.test-cache
 test-results
+src/Sector.Tests/testarea/sector.db

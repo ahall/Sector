@@ -20,10 +20,11 @@ namespace Sector.Tests
         [SetUp]
         public void Setup()
         {
-            // Clean out schema to start fresh.
-            TestUtils.MakeFactory(export: true).Dispose();
-
-            dbFactory = TestUtils.MakeFactory(export: false);
+            if (File.Exists(TestUtils.GetDbPath()))
+            {
+                File.Delete(TestUtils.GetDbPath());
+            }
+            dbFactory = TestUtils.MakeFactory();
         }
 
         [Test()]
@@ -31,6 +32,9 @@ namespace Sector.Tests
         {
             var sectorDb = TestUtils.MakeSectorDb();
             var repository = TestUtils.MakeRepository();
+
+            // Need to start with the schema created.
+            TestUtils.CreateMigrationTable();
 
             MigrateApi migrateApi = new MigrateApi(sectorDb);
             bool success = migrateApi.IsVersionControlled(repository);
@@ -99,6 +103,9 @@ namespace Sector.Tests
 
             MigrateApi migrateApi = new MigrateApi(sectorDb);
 
+            // Need to start with the schema created.
+            TestUtils.CreateMigrationTable();
+
             // Now create migrate version with version 0, then it shall return true.
             using (ISession session = dbFactory.OpenSession())
             {
@@ -157,8 +164,6 @@ namespace Sector.Tests
 
                 using (ITransaction transaction = session.BeginTransaction())
                 {
-                    session.CreateSQLQuery("DROP TABLE testie CASCADE;").ExecuteUpdate();
-                    session.CreateSQLQuery("DROP TABLE moon CASCADE;").ExecuteUpdate();
                     transaction.Commit();
                 }
             }
@@ -187,8 +192,6 @@ namespace Sector.Tests
 
                 using (ITransaction transaction = session.BeginTransaction())
                 {
-                    session.CreateSQLQuery("DROP TABLE testie CASCADE;").ExecuteUpdate();
-                    session.CreateSQLQuery("DROP TABLE moon CASCADE;").ExecuteUpdate();
                     transaction.Commit();
                 }
             }
@@ -217,8 +220,6 @@ namespace Sector.Tests
 
                 using (ITransaction transaction = session.BeginTransaction())
                 {
-                    session.CreateSQLQuery("DROP TABLE testie CASCADE;").ExecuteUpdate();
-                    session.CreateSQLQuery("DROP TABLE moon CASCADE;").ExecuteUpdate();
                     transaction.Commit();
                 }
             }
