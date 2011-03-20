@@ -14,6 +14,12 @@ namespace Sector.Tool
         private OptionSet optionSet;
         private MigrateApi migrateApi;
 
+        private string dbUser;
+        private string dbPass;
+        private string dbName;
+        private string dbType;
+        private string dbHostname;
+
         public MainClass()
         {
         }
@@ -27,9 +33,59 @@ namespace Sector.Tool
             Console.Error.WriteLine("\tmigrate_db_version:\t\tPrints version the database is at");
             Console.Error.WriteLine("\tmigrate_upgrade <version>:\tUpgrade to the version given or latest if no version given");
             Console.Error.WriteLine("\tmigrate_downgrade [version]:\tDowngrade to the version given");
-            Console.Error.WriteLine("Sector is a database migration tool");
+            Console.Error.WriteLine();
+            Console.Error.WriteLine("Supported database types: sqlite, postgresql, mysql");
+            Console.Error.WriteLine("Sector is a database migration suite - https://github.com/ahall/Sector");
             optionSet.WriteOptionDescriptions(Console.Error);
             Environment.Exit(-1);
+        }
+
+        private string GetConnectionString()
+        {
+            if (string.IsNullOrEmpty(dbHostname) || string.IsNullOrEmpty(dbUser) ||
+                string.IsNullOrEmpty(dbName) || string.IsNullOrEmpty(dbPass))
+            {
+                throw new SectorException("Missing dbhostname, username, dbname or dbpass");
+            }
+
+            return string.Format("Server={0};Database={1};User Id={2};Password={3}",
+                        dbHostname, dbName, dbUser, dbPass);
+        }
+
+        private IPersistenceConfigurer GetConfigurator()
+        {
+            IPersistenceConfigurer ret = null;
+
+            switch (dbType)
+            {
+                case "postgresql":
+                {
+                    string connString = GetConnectionString();
+                    ret = PostgreSQLConfiguration.PostgreSQL82.ConnectionString(connString);
+                    break;
+                }
+                case "mysql":
+                {
+                    string connString = GetConnectionString();
+                    ret = MySQLConfiguration.Standard.ConnectionString(connString);
+                    break;
+                }
+                case "sqlite":
+                {
+                    if (string.IsNullOrEmpty(dbName))
+                    {
+                        throw new SectorException("Dbname is required for sqlite");
+                    }
+                    ret = SQLiteConfiguration.Standard.UsingFile(dbName);
+                    break;
+                }
+                default:
+                {
+                    throw new SectorException("Invalid database type given");
+                }
+            }
+
+            return ret;
         }
 
         public void Run(string[] args)
@@ -45,6 +101,21 @@ namespace Sector.Tool
                 .Add("repository-path=",
                      "Required: Full path to the repository path",
                      option => repoPath = option)
+                .Add("dbuser=",
+                     "Required: Username for the database",
+                     option => dbUser = option)
+                .Add("dbpass=",
+                     "Required: Password for the database",
+                     option => dbPass = option)
+                .Add("dbname=",
+                     "Required: Database name",
+                     option => dbName = option)
+                .Add("dbhost=",
+                     "Required: Database hostname",
+                     option => dbHostname = option)
+                .Add("dbtype=",
+                     "Required: Database type e.g. sqlite, postgresql, mysql",
+                     option => dbType = option)
                 .Add("version=",
                      "For upgrade/downgrade determines what version to go to",
                      option => version = int.Parse(option));
@@ -70,6 +141,7 @@ namespace Sector.Tool
             if (extraArgs.Count < 1)
             {
                 Console.WriteLine("Missing command");
+                ShowHelp(optionSet);
                 return;
             }
 
@@ -79,15 +151,9 @@ namespace Sector.Tool
                 return;
             }
 
-            if (extraArgs.Count < 1)
-            {
-                Console.WriteLine("Missing command");
-                return;
-            }
-
             // Now parse sector.cfg
             Repository repository = new Repository(repoPath);
-            ISectorDb sectorDb = new SectorDb(SQLiteConfiguration.Standard.UsingFile("/tmp/a.db"));
+            ISectorDb sectorDb = new SectorDb(GetConfigurator());
 
             migrateApi = new MigrateApi(sectorDb);
 
