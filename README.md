@@ -1,4 +1,5 @@
-# Sector Sector is an easy to use database migration suite that uses FluentNHibernate. This is inspired by the sqlalchemy-migrate python library which I have missed coming from python.
+# Sector
+Sector is an easy to use database migration suite that uses FluentNHibernate. This is inspired by the sqlalchemy-migrate python library which I have missed coming from python.
 ## Contribution
 This is a new library and all contribution is greatly appreciated.
 ## Preparation
