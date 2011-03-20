@@ -6,15 +6,16 @@ This is a new library and all contribution is greatly appreciated.
 First we need to create a repository which contains the SQL files we want to version for upgrade/downgrades. In this example we will put them into /tmp/repo. We start by issuing the following command:
     mkdir -p /tmp/repo /tmp/repo/versions
 
-Next we edit /tmp/repo/sector.cfg and add the following text:    [main]
+Next we edit /tmp/repo/sector.cfg and add the following text:
+    [main]
     repository_id = Sector Test
 Now lets create some versions, lets create /tmp/repo/versions/1_upgrade.sql and make it look like:
     CREATE TABLE testie(
         id serial PRIMARY KEY NOT NULL,        age integer NOT NULL UNIQUE,
         description varchar(255)
     );
-And now /tmp/repo/versions/1_downgrade.sql    DROP TABLE testie;
-
+And now /tmp/repo/versions/1_downgrade.sql
+    DROP TABLE testie;
 
 ## Running the commands
 In this example we are using PostgreSQL so we'll need to have the Npgsql driver in the current directory or in the GAC.
