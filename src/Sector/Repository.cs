@@ -14,7 +14,12 @@ namespace Sector
         public string RepositoryId { get; private set; }
         public string RepositoryPath { get; private set; }
         private string versionDir;
-        private ISet<int> versions;
+
+        /// <summary>
+        /// Stores version number to a base filename e.g. 1 -> 001, 2 -> 1
+        /// which can then be translated to 001_upgrade.sql, 1_upgrade.sql
+        /// </summary>
+        private Dictionary<int, string> versions;
 
         IConfigSource configSource;
         IConfig mainConfig;
@@ -27,7 +32,7 @@ namespace Sector
             mainConfig = configSource.Configs["main"];
             RepositoryId = mainConfig.GetString("repository_id");
             versionDir = Path.Combine(RepositoryPath, "versions");
-            versions = new HashSet<int>();
+            versions = new Dictionary<int, string>();
             ScanFiles();
         }
 
@@ -39,27 +44,30 @@ namespace Sector
                 int version;
                 if ((elements.Length < 2) || (!int.TryParse(elements[0], out version)))
                 {
-                    // Skip files that are not e.g. 1_blah.sql
+                    // Skip files that are not e.g. 1_blah.sql or 001_blah.sql
                     continue;
                 }
 
-                versions.Add(version);
+                if (!HasVersion(version))
+                {
+                    versions.Add(version, elements[0]);
+                }
             }
         }
 
         public bool HasVersion(int version)
         {
-            return versions.Contains(version);
+            return versions.ContainsKey(version);
         }
 
         public int GetVersion()
         {
-            return versions.Max();
+            return versions.Keys.Max();
         }
 
         public string GetUpgradeSql(int version)
         {
-            if (!versions.Contains(version))
+            if (!versions.ContainsKey(version))
                 throw new SectorException("Repository does not contain this version");
 
             string filename = string.Format("{0}_upgrade.sql", version);
@@ -69,7 +77,7 @@ namespace Sector
 
         public string GetDowngradeSql(int version)
         {
-            if (!versions.Contains(version))
+            if (!versions.ContainsKey(version))
                 throw new SectorException("Repository does not contain this version");
 
             string filename = string.Format("{0}_downgrade.sql", version);

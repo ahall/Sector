@@ -40,53 +40,6 @@ namespace Sector.Tool
             Environment.Exit(-1);
         }
 
-        private string GetConnectionString()
-        {
-            if (string.IsNullOrEmpty(dbHostname) || string.IsNullOrEmpty(dbUser) ||
-                string.IsNullOrEmpty(dbName) || string.IsNullOrEmpty(dbPass))
-            {
-                throw new SectorException("Missing dbhostname, username, dbname or dbpass");
-            }
-
-            return string.Format("Server={0};Database={1};User Id={2};Password={3}",
-                        dbHostname, dbName, dbUser, dbPass);
-        }
-
-        private IPersistenceConfigurer GetConfigurator()
-        {
-            IPersistenceConfigurer ret = null;
-
-            switch (dbType)
-            {
-                case "postgresql":
-                {
-                    string connString = GetConnectionString();
-                    ret = PostgreSQLConfiguration.PostgreSQL82.ConnectionString(connString);
-                    break;
-                }
-                case "mysql":
-                {
-                    string connString = GetConnectionString();
-                    ret = MySQLConfiguration.Standard.ConnectionString(connString);
-                    break;
-                }
-                case "sqlite":
-                {
-                    if (string.IsNullOrEmpty(dbName))
-                    {
-                        throw new SectorException("Dbname is required for sqlite");
-                    }
-                    ret = SQLiteConfiguration.Standard.UsingFile(dbName);
-                    break;
-                }
-                default:
-                {
-                    throw new SectorException("Invalid database type given");
-                }
-            }
-
-            return ret;
-        }
 
         public void Run(string[] args)
         {
@@ -153,7 +106,8 @@ namespace Sector.Tool
 
             // Now parse sector.cfg
             Repository repository = new Repository(repoPath);
-            ISectorDb sectorDb = new SectorDb(GetConfigurator());
+            var dbConfigurator = DbUtils.GetConfigurator(dbType, dbHostname, dbUser, dbName, dbPass);
+            ISectorDb sectorDb = new SectorDb(dbConfigurator);
 
             migrateApi = new MigrateApi(sectorDb);
 

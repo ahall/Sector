@@ -8,12 +8,12 @@ First we need to create a repository which contains the SQL files we want to ver
 
 Next we edit /tmp/repo/sector.cfg and add the following text:    [main]
     repository_id = Sector Test
-Now lets create some versions, lets create /tmp/repo/versions/1_upgrade.sql and make it look like:
+Now lets create some versions, lets create /tmp/repo/versions/001_upgrade.sql and make it look like:
     CREATE TABLE testie(
         id serial PRIMARY KEY NOT NULL,        age integer NOT NULL UNIQUE,
         description varchar(255)
     );
-And now /tmp/repo/versions/1_downgrade.sql    DROP TABLE testie;
+And now /tmp/repo/versions/001_downgrade.sql    DROP TABLE testie;
 
 
 ## Running the commands
