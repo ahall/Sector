@@ -70,7 +70,7 @@ namespace Sector
             if (!versions.ContainsKey(version))
                 throw new SectorException("Repository does not contain this version");
 
-            string filename = string.Format("{0}_upgrade.sql", version);
+            string filename = string.Format("{0}_upgrade.sql", versions[version]);
             string fullPath = Path.Combine(versionDir, filename);
             return File.ReadAllText(fullPath);
         }
@@ -80,7 +80,7 @@ namespace Sector
             if (!versions.ContainsKey(version))
                 throw new SectorException("Repository does not contain this version");
 
-            string filename = string.Format("{0}_downgrade.sql", version);
+            string filename = string.Format("{0}_downgrade.sql", versions[version]);
             string fullPath = Path.Combine(versionDir, filename);
             return File.ReadAllText(fullPath);
         }
