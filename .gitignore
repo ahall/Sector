@@ -29,3 +29,4 @@ src/test-results
 *.test-cache
 test-results
 src/Sector.Tests/testarea/sector.db
+TestResult.xml

@@ -85,14 +85,15 @@ namespace Sector.Tests
         }
 
         [Test()]
-        [ExpectedException(typeof(SectorException))]
         public void GetDbVersion_EmptyDb()
         {
             var sectorDb = TestUtils.MakeSectorDb();
             var repository = TestUtils.MakeRepository();
 
-            MigrateApi migrateApi = new MigrateApi(sectorDb);
-            migrateApi.GetDbVersion(repository);
+            Assert.Throws<GenericADOException>(delegate {
+                MigrateApi migrateApi = new MigrateApi(sectorDb);
+                migrateApi.GetDbVersion(repository);
+            });
         }
 
         [Test()]
