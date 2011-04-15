@@ -14,6 +14,8 @@ namespace Sector
         public string RepositoryId { get; private set; }
         public string RepositoryPath { get; private set; }
         private string versionDir;
+        private readonly HashSet<string> allowedEndings = new HashSet<string>();
+        private const string COMP_SEPARATOR = "_";
 
         /// <summary>
         /// Stores version number to a base filename e.g. 1 -> 001, 2 -> 1
@@ -26,6 +28,9 @@ namespace Sector
 
         public Repository(string repoPath)
         {
+            allowedEndings.Add("upgrade.sql");
+            allowedEndings.Add("downgrade.sql");
+
             RepositoryPath = repoPath;
             string configPath = Path.Combine(RepositoryPath, "sector.cfg");
             configSource = new IniConfigSource(configPath);
@@ -40,17 +45,20 @@ namespace Sector
         {
             foreach (FileInfo file in new DirectoryInfo(versionDir).GetFiles("*.sql"))
             {
-                var elements = file.Name.Split(new char[] { '_' }, 2);
+                string[] elements = file.Name.Split(new string[] { COMP_SEPARATOR },
+                                                    StringSplitOptions.RemoveEmptyEntries);
                 int version;
-                if ((elements.Length < 2) || (!int.TryParse(elements[0], out version)))
+                if ((elements.Length < 2) || (!int.TryParse(elements[0], out version)) ||
+                    (!allowedEndings.Contains(elements.Last())))
                 {
-                    // Skip files that are not e.g. 1_blah.sql or 001_blah.sql
+                    // Skip files that are not e.g. 1_blah.sql or 001_blah_upgrade.sql or
+                    // 001_blah_blah_upgrade.sql.
                     continue;
                 }
 
                 if (!HasVersion(version))
                 {
-                    versions.Add(version, elements[0]);
+                    versions.Add(version, string.Join(COMP_SEPARATOR, elements.Take(elements.Length - 1)));
                 }
             }
         }
