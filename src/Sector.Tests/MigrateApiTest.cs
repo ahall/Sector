@@ -110,20 +110,18 @@ namespace Sector.Tests
             // Now create migrate version with version 0, then it shall return true.
             using (ISession session = dbFactory.OpenSession())
             {
-                int migId = 0;
                 using (ITransaction transaction = session.BeginTransaction())
                 {
                     var migVer = new MigrateVersion(repository.RepositoryId, repository.RepositoryPath, 0);
                     session.Save(migVer);
                     transaction.Commit();
-                    migId = migVer.Id;
                 }
 
                 Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
 
                 using (ITransaction transaction = session.BeginTransaction())
                 {
-                    var migVer = session.Get<MigrateVersion>(migId);
+                    var migVer = session.Get<MigrateVersion>(repository.RepositoryId);
                     migVer.Version = 10;
                     session.Update(migVer);
                     transaction.Commit();

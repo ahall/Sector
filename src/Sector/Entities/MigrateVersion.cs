@@ -4,8 +4,6 @@ namespace Sector.Entities
 {
     public class MigrateVersion
     {
-        public virtual int Id { get; private set; }
-
         /// <summary>
         /// Gets or sets the repository identifier.
         /// </summary>

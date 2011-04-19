@@ -8,9 +8,8 @@ namespace Sector.Mappings
     {
         public MigrateVersionMap()
         {
-            Id(x => x.Id, "id");
+            Id(x => x.RepositoryId, "repository_id");
             Map(x => x.RepositoryPath).Column("repository_path");
-            Map(x => x.RepositoryId).Column("repository_id");
             Map(x => x.Version).Column("version");
 
             Table("migrate_version");
