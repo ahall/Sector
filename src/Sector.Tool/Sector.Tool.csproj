@@ -9,7 +9,6 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Sector.Tool</RootNamespace>
     <AssemblyName>Sector.Tool</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DebugSymbols>true</DebugSymbols>
@@ -20,7 +19,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <PlatformTarget>x86</PlatformTarget>
-    <Commandlineparameters>--repository-path=/Users/ahall/Sector/ migrate_version_control</Commandlineparameters>
+    <Commandlineparameters>--dbuser=ahall --dbpass=temp123 --dbname=mikkitest --dbhost=localhost --dbtype=postgresql --repository-path=/Users/ahall/Projects/Sector/src/Sector.Tool/bin/Debug/mikki migrate_version_control</Commandlineparameters>
     <ConsolePause>false</ConsolePause>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
@@ -34,17 +33,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="Nini, Version=1.1.0.0, Culture=neutral, PublicKeyToken=c9892194e1b9ec1b">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Libs\Nini.dll</HintPath>
-    </Reference>
-    <Reference Include="NDesk.Options, Version=0.2.1.0, Culture=neutral, PublicKeyToken=null">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="NDesk.Options">
       <HintPath>..\..\Libs\NDesk.Options.dll</HintPath>
-    </Reference>
-    <Reference Include="FluentNHibernate, Version=1.2.0.694, Culture=neutral, PublicKeyToken=8aa435e3cb308880">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\Libs\FluentNHibernate.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

@@ -1,10 +1,6 @@
 using System;
-using NHibernate.Tool.hbm2ddl;
-using FluentNHibernate.Cfg.Db;
-using FluentNHibernate.Cfg;
-using Sector.Mappings;
-using NHibernate;
 using System.IO;
+using System.Data.SQLite;
 
 namespace Sector.Tests
 {
@@ -27,11 +23,6 @@ namespace Sector.Tests
             return Path.Combine(solnDir, "testarea");
         }
 
-        private static IPersistenceConfigurer GetDbConfigurer()
-        {
-            return SQLiteConfiguration.Standard.UsingFile(GetDbPath());
-        }
-
         public static string GetDbPath()
         {
             return Path.Combine(TestArea, "sector.db");
@@ -39,30 +30,38 @@ namespace Sector.Tests
 
         public static void CreateMigrationTable()
         {
-            Fluently.Configure()
-                    .Database(GetDbConfigurer())
-                    .Mappings(x => x.FluentMappings.Add<MigrateVersionMap>())
-                    .ExposeConfiguration(cfg => new SchemaExport(cfg).Create(script: false, export: true))
-                    .BuildSessionFactory()
-                    .Dispose();
+            using (var conn = OpenDbconnection())
+            using (var cmd = conn.CreateCommand())
+            {
+                const string sql = "CREATE TABLE {0}("
+                                 + "repository_id VARCHAR(255) PRIMARY KEY NOT NULL,"
+                                 + "repository_path VARCHAR(255),"
+                                 + "version integer)";
+                cmd.CommandText = string.Format(sql, "migrate_version");
+                cmd.ExecuteNonQuery();
+            }
         }
 
-        public static ISessionFactory MakeFactory()
+        public static ISectorDb MakeSectorDb()
         {
-            return Fluently.Configure()
-                  .Database(GetDbConfigurer())
-                  .Mappings(x => x.FluentMappings.Add<MigrateVersionMap>())
-                  .BuildSessionFactory();
+            return new SectorDb(OpenDbconnection());
+        }
+
+        public static SQLiteConnection GetDbconnection()
+        {
+            return new SQLiteConnection("Data Source= " + GetDbPath());
+        }
+
+        public static SQLiteConnection OpenDbconnection()
+        {
+            var conn = GetDbconnection();
+            conn.Open();
+            return conn;
         }
 
         public static Repository MakeRepository()
         {
             return new Repository(Path.Combine(TestFiles, "repo"));
-        }
-
-        public static ISectorDb MakeSectorDb()
-        {
-            return new SectorDb(GetDbConfigurer());
         }
     }
 }

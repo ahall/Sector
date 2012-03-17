@@ -1,22 +1,14 @@
 using System;
 using NUnit.Framework;
-using NHibernate;
-using Sector.Entities;
 using Sector;
-using FluentNHibernate.Cfg.Db;
-using NHibernate.Tool.hbm2ddl;
-using FluentNHibernate.Cfg;
-using Sector.Mappings;
 using System.IO;
-using NHibernate.Exceptions;
+using System.Data.SQLite;
 
 namespace Sector.Tests
 {
     [TestFixture()]
     public class MigrateApiTest
     {
-        private ISessionFactory dbFactory;
-
         [SetUp]
         public void Setup()
         {
@@ -24,7 +16,6 @@ namespace Sector.Tests
             {
                 File.Delete(TestUtils.GetDbPath());
             }
-            dbFactory = TestUtils.MakeFactory();
         }
 
         [Test()]
@@ -36,17 +27,15 @@ namespace Sector.Tests
             // Need to start with the schema created.
             TestUtils.CreateMigrationTable();
 
-            MigrateApi migrateApi = new MigrateApi(sectorDb);
+            var migrateApi = new MigrateApi(sectorDb);
             bool success = migrateApi.IsVersionControlled(repository);
             Assert.IsFalse(success);
 
-            // Now create migrate version with version 0, then it shall return true.
-            using (ISession session = dbFactory.OpenSession())
-            using (ITransaction transaction = session.BeginTransaction())
+            using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
             {
-                var migVer = new MigrateVersion(repository.RepositoryId, repository.RepositoryPath, 0);
-                session.Save(migVer);
-                transaction.Commit();
+                string templ = "INSERT INTO migrate_version (repository_id, repository_path, version) VALUES('{0}', '{1}', '{2}')";
+                dbCommand.CommandText = string.Format(templ, repository.RepositoryId, repository.RepositoryPath, 0);
+                dbCommand.ExecuteNonQuery();
             }
 
             success = migrateApi.IsVersionControlled(repository);
@@ -66,16 +55,15 @@ namespace Sector.Tests
             Assert.IsTrue(migrateApi.IsVersionControlled(repository));
             Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
 
-            using (ISession session = dbFactory.OpenSession())
+            using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
             {
-                MigrateVersion migVer = session.QueryOver<MigrateVersion>()
-                    .Where(m => m.RepositoryId == repository.RepositoryId)
-                    .SingleOrDefault();
+                string templ = "SELECT * FROM {0} WHERE repository_id = '{1}'";
+                dbCommand.CommandText = string.Format(templ, SectorDb.TableName, repository.RepositoryId);
+                var reader = dbCommand.ExecuteReader();
 
-                Assert.IsNotNull(migVer);
-                Assert.AreEqual(repository.RepositoryId, migVer.RepositoryId);
-                Assert.AreEqual(repository.RepositoryPath, migVer.RepositoryPath);
-                Assert.AreEqual(0, migVer.Version);
+                Assert.AreEqual(repository.RepositoryId, reader["repository_id"]);
+                Assert.AreEqual(repository.RepositoryPath, reader["repository_path"]);
+                Assert.AreEqual(0, reader["version"]);
             }
 
             // Trying again results in SectorException.
@@ -90,7 +78,7 @@ namespace Sector.Tests
             var sectorDb = TestUtils.MakeSectorDb();
             var repository = TestUtils.MakeRepository();
 
-            Assert.Throws<GenericADOException>(delegate {
+            Assert.Throws<SQLiteException>(delegate {
                 MigrateApi migrateApi = new MigrateApi(sectorDb);
                 migrateApi.GetDbVersion(repository);
             });
@@ -107,27 +95,28 @@ namespace Sector.Tests
             // Need to start with the schema created.
             TestUtils.CreateMigrationTable();
 
-            // Now create migrate version with version 0, then it shall return true.
-            using (ISession session = dbFactory.OpenSession())
+
+            using (var dbConn = TestUtils.OpenDbconnection())
             {
-                using (ITransaction transaction = session.BeginTransaction())
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
                 {
-                    var migVer = new MigrateVersion(repository.RepositoryId, repository.RepositoryPath, 0);
-                    session.Save(migVer);
-                    transaction.Commit();
+                    string templ = "INSERT INTO migrate_version (repository_id, repository_path, version) VALUES('{0}', '{1}', '{2}')";
+                    dbCommand.CommandText = string.Format(templ, repository.RepositoryId, repository.RepositoryPath, 0);
+                    dbCommand.ExecuteNonQuery();
+
+                    // Verify correct behaviour.
+                    Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
                 }
 
-                Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
-
-                using (ITransaction transaction = session.BeginTransaction())
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
                 {
-                    var migVer = session.Get<MigrateVersion>(repository.RepositoryId);
-                    migVer.Version = 10;
-                    session.Update(migVer);
-                    transaction.Commit();
-                }
+                    string templ = "UPDATE migrate_version SET version = 10 WHERE repository_id = '{0}'";
+                    dbCommand.CommandText = string.Format(templ, repository.RepositoryId);
+                    dbCommand.ExecuteNonQuery();
 
-                Assert.AreEqual(10, migrateApi.GetDbVersion(repository));
+                    // Verify correct behaviour.
+                    Assert.AreEqual(10, migrateApi.GetDbVersion(repository));
+                }
             }
         }
 
@@ -140,30 +129,52 @@ namespace Sector.Tests
             MigrateApi migrateApi = new MigrateApi(sectorDb);
             migrateApi.VersionControl(repository);
 
-            using (ISession session = dbFactory.OpenSession())
+            using (var dbConn = TestUtils.OpenDbconnection())
             {
                 Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
-                Assert.Throws<GenericADOException>(delegate {
-                    session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
-                });
 
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                {
+                    dbCommand.CommandText = "SELECT * FROM testie";
+
+                    Assert.Throws<SQLiteException>(delegate {
+                        dbCommand.ExecuteNonQuery();
+                    });
+                }
+
+                // Upgrading to 1, will add testie.
                 migrateApi.Upgrade(repository, 1);
-                session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
-                Assert.Throws<GenericADOException>(delegate {
-                    session.CreateSQLQuery("SELECT * FROM moon;").ExecuteUpdate();
-                });
-
                 Assert.AreEqual(1, migrateApi.GetDbVersion(repository));
-                session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
+
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                {
+                    dbCommand.CommandText = "SELECT * FROM testie";
+                    dbCommand.ExecuteNonQuery();
+                }
+
+                // moon comes in in version 2, so shouldnt be there now.
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                {
+                    dbCommand.CommandText = "SELECT * FROM moon";
+
+                    Assert.Throws<SQLiteException>(delegate {
+                        dbCommand.ExecuteNonQuery();
+                    });
+                }
 
                 migrateApi.Upgrade(repository, 2);
                 Assert.AreEqual(2, migrateApi.GetDbVersion(repository));
-                session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
-                session.CreateSQLQuery("SELECT * FROM moon;").ExecuteUpdate();
 
-                using (ITransaction transaction = session.BeginTransaction())
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
                 {
-                    transaction.Commit();
+                    dbCommand.CommandText = "SELECT * FROM testie";
+                    dbCommand.ExecuteNonQuery();
+                }
+
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                {
+                    dbCommand.CommandText = "SELECT * FROM moon";
+                    dbCommand.ExecuteNonQuery();
                 }
             }
         }
@@ -177,21 +188,31 @@ namespace Sector.Tests
             MigrateApi migrateApi = new MigrateApi(sectorDb);
             migrateApi.VersionControl(repository);
 
-            using (ISession session = dbFactory.OpenSession())
+            using (var dbConn = TestUtils.OpenDbconnection())
             {
                 Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
-                Assert.Throws<GenericADOException>(delegate {
-                    session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
-                });
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                {
+                    dbCommand.CommandText = "SELECT * FROM testie";
+
+                    Assert.Throws<SQLiteException>(delegate {
+                        dbCommand.ExecuteNonQuery();
+                    });
+                }
 
                 migrateApi.Upgrade(repository, 2);
-                session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
-                session.CreateSQLQuery("SELECT * FROM moon;").ExecuteUpdate();
                 Assert.AreEqual(2, migrateApi.GetDbVersion(repository));
 
-                using (ITransaction transaction = session.BeginTransaction())
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
                 {
-                    transaction.Commit();
+                    dbCommand.CommandText = "SELECT * FROM testie";
+                    dbCommand.ExecuteNonQuery();
+                }
+
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                {
+                    dbCommand.CommandText = "SELECT * FROM moon";
+                    dbCommand.ExecuteNonQuery();
                 }
             }
         }
@@ -205,21 +226,31 @@ namespace Sector.Tests
             MigrateApi migrateApi = new MigrateApi(sectorDb);
             migrateApi.VersionControl(repository);
 
-            using (ISession session = dbFactory.OpenSession())
+            using (var dbConn = TestUtils.OpenDbconnection())
             {
                 Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
-                Assert.Throws<GenericADOException>(delegate {
-                    session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
-                });
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                {
+                    dbCommand.CommandText = "SELECT * FROM testie";
+
+                    Assert.Throws<SQLiteException>(delegate {
+                        dbCommand.ExecuteNonQuery();
+                    });
+                }
 
                 migrateApi.Upgrade(repository);
-                session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
-                session.CreateSQLQuery("SELECT * FROM moon;").ExecuteUpdate();
                 Assert.AreEqual(2, migrateApi.GetDbVersion(repository));
 
-                using (ITransaction transaction = session.BeginTransaction())
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
                 {
-                    transaction.Commit();
+                    dbCommand.CommandText = "SELECT * FROM testie";
+                    dbCommand.ExecuteNonQuery();
+                }
+
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                {
+                    dbCommand.CommandText = "SELECT * FROM moon";
+                    dbCommand.ExecuteNonQuery();
                 }
             }
         }
@@ -233,19 +264,43 @@ namespace Sector.Tests
             MigrateApi migrateApi = new MigrateApi(sectorDb);
             migrateApi.VersionControl(repository);
 
-            using (ISession session = dbFactory.OpenSession())
+            using (var dbConn = TestUtils.OpenDbconnection())
             {
                 migrateApi.Upgrade(repository, 2);
-                session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
-                session.CreateSQLQuery("SELECT * FROM moon;").ExecuteUpdate();
                 Assert.AreEqual(2, migrateApi.GetDbVersion(repository));
+
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                {
+                    dbCommand.CommandText = "SELECT * FROM testie";
+                    dbCommand.ExecuteNonQuery();
+                }
+
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                {
+                    dbCommand.CommandText = "SELECT * FROM moon";
+                    dbCommand.ExecuteNonQuery();
+                }
 
                 migrateApi.Downgrade(repository, 0);
                 Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
-                Assert.Throws<GenericADOException>(delegate {
-                    session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
-                    session.CreateSQLQuery("SELECT * FROM moon;").ExecuteUpdate();
-                });
+
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                {
+                    dbCommand.CommandText = "SELECT * FROM testie";
+
+                    Assert.Throws<SQLiteException>(delegate {
+                        dbCommand.ExecuteNonQuery();
+                    });
+                }
+
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                {
+                    dbCommand.CommandText = "SELECT * FROM moon";
+
+                    Assert.Throws<SQLiteException>(delegate {
+                        dbCommand.ExecuteNonQuery();
+                    });
+                }
             }
         }
 
@@ -258,26 +313,61 @@ namespace Sector.Tests
             MigrateApi migrateApi = new MigrateApi(sectorDb);
             migrateApi.VersionControl(repository);
 
-            using (ISession session = dbFactory.OpenSession())
+            using (var dbConn = TestUtils.OpenDbconnection())
             {
                 migrateApi.Upgrade(repository, 2);
-                session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
-                session.CreateSQLQuery("SELECT * FROM moon;").ExecuteUpdate();
                 Assert.AreEqual(2, migrateApi.GetDbVersion(repository));
+
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                {
+                    dbCommand.CommandText = "SELECT * FROM testie";
+                    dbCommand.ExecuteNonQuery();
+                }
+
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                {
+                    dbCommand.CommandText = "SELECT * FROM moon";
+                    dbCommand.ExecuteNonQuery();
+                }
 
                 migrateApi.Downgrade(repository, 1);
                 Assert.AreEqual(1, migrateApi.GetDbVersion(repository));
-                session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
-                Assert.Throws<GenericADOException>(delegate {
-                    session.CreateSQLQuery("SELECT * FROM moon;").ExecuteUpdate();
-                });
+
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                {
+                    dbCommand.CommandText = "SELECT * FROM testie";
+                    dbCommand.ExecuteNonQuery();
+                }
+
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                {
+                    dbCommand.CommandText = "SELECT * FROM moon";
+
+                    Assert.Throws<SQLiteException>(delegate {
+                        dbCommand.ExecuteNonQuery();
+                    });
+                }
 
                 migrateApi.Downgrade(repository, 0);
                 Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
-                Assert.Throws<GenericADOException>(delegate {
-                    session.CreateSQLQuery("SELECT * FROM testie;").ExecuteUpdate();
-                    session.CreateSQLQuery("SELECT * FROM moon;").ExecuteUpdate();
-                });
+
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                {
+                    dbCommand.CommandText = "SELECT * FROM testie";
+
+                    Assert.Throws<SQLiteException>(delegate {
+                        dbCommand.ExecuteNonQuery();
+                    });
+                }
+
+                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                {
+                    dbCommand.CommandText = "SELECT * FROM moon";
+
+                    Assert.Throws<SQLiteException>(delegate {
+                        dbCommand.ExecuteNonQuery();
+                    });
+                }
             }
         }
     }

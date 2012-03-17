@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
 using NDesk.Options;
-using Nini.Config;
 using Sector;
 using System.IO;
-using FluentNHibernate.Cfg.Db;
 
 namespace Sector.Tool
 {
@@ -106,8 +104,8 @@ namespace Sector.Tool
 
             // Now parse sector.cfg
             Repository repository = new Repository(repoPath);
-            var dbConfigurator = DbUtils.GetConfigurator(dbType, dbHostname, dbUser, dbName, dbPass);
-            ISectorDb sectorDb = new SectorDb(dbConfigurator);
+            ISectorDb sectorDb = SectorDb.FromDbInfo(dbType, dbHostname, dbUser, dbName, dbPass);
+            sectorDb.Connect();
 
             migrateApi = new MigrateApi(sectorDb);
 
@@ -154,6 +152,8 @@ namespace Sector.Tool
                     return;
                 }
             }
+
+            sectorDb.Dispose();
         }
 
         public static void Main(string[] args)

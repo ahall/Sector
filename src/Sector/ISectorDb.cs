@@ -1,22 +1,17 @@
 using System;
-using NHibernate;
+using System.Data;
 
 namespace Sector
 {
-    public interface ISectorDb
+    public interface ISectorDb : IDisposable
     {
-        /// <summary>
-        /// Gets the db factory.
-        /// </summary>
-        /// <value>
-        /// The main db factory.
-        /// </value>
-        ISessionFactory DbFactory { get; }
+        IDbConnection Connection { get; }
 
         /// <summary>
         /// Creates the migration table.
         /// </summary>
         void CreateMigrationTable();
+
+        void Connect();
     }
 }
-

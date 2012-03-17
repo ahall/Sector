@@ -1,8 +1,8 @@
 using System;
-using Nini.Config;
 using System.Linq;
 using System.IO;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace Sector
 {
@@ -23,9 +23,6 @@ namespace Sector
         /// </summary>
         private Dictionary<int, string> versions;
 
-        IConfigSource configSource;
-        IConfig mainConfig;
-
         public Repository(string repoPath)
         {
             allowedEndings.Add("upgrade.sql");
@@ -33,12 +30,48 @@ namespace Sector
 
             RepositoryPath = repoPath;
             string configPath = Path.Combine(RepositoryPath, "sector.cfg");
-            configSource = new IniConfigSource(configPath);
-            mainConfig = configSource.Configs["main"];
-            RepositoryId = mainConfig.GetString("repository_id");
+            RepositoryId = GetRepIdFromPath(configPath);
             versionDir = Path.Combine(RepositoryPath, "versions");
             versions = new Dictionary<int, string>();
             ScanFiles();
+        }
+
+        private static string GetRepIdFromPath(string path)
+        {
+            string repoId = null;
+
+            using (var fs = File.OpenRead(path))
+            using (var sr = new StreamReader(fs))
+            {
+                while (true)
+                {
+                    string line = sr.ReadLine();
+                    if (line == null)
+                    {
+                        break;
+                    }
+
+                    if (!line.StartsWith("repository_id"))
+                    {
+                        continue;
+                    }
+
+                    // Found the line
+                    var components = Regex.Split(line, @"\s*=\s*");
+                    if (components.Length == 2)
+                    {
+                        repoId = components[1];
+                        break;
+                    }
+                }
+            }
+
+            if (repoId == null)
+            {
+                throw new ArgumentException("repository_id not found in sector config");
+            }
+
+            return "";
         }
 
         private void ScanFiles()

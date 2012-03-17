@@ -1,37 +1,68 @@
 using System;
-using NHibernate;
-using NHibernate.Tool.hbm2ddl;
-using FluentNHibernate.Cfg.Db;
-using FluentNHibernate.Cfg;
-using Sector.Mappings;
+using System.Data;
+using System.Data.Common;
 
 namespace Sector
 {
+    public enum DatabaseType
+    {
+        PostgreSql = 0,
+        Sqlite
+    }
+
     public class SectorDb : ISectorDb
     {
-        private IPersistenceConfigurer dbConfigurer;
-        public ISessionFactory DbFactory { get; private set; }
+        public IDbConnection Connection { get; set; }
 
-        public SectorDb(IPersistenceConfigurer dbConfigurer)
+        public static string TableName = "migrate_version";
+
+        public SectorDb(string dbType, string connectionString)
         {
-            this.dbConfigurer = dbConfigurer;
-            DbFactory = Fluently.Configure()
-                    .Database(dbConfigurer)
-                    .Mappings(x => x.FluentMappings.Add<MigrateVersionMap>())
-                    .BuildSessionFactory();
+            string providerName = "System.Data.SQLite.dll";
+
+            if (dbType == "postgresql")
+            {
+                providerName = "Npgsql";
+            }
+
+            var factory = DbProviderFactories.GetFactory(providerName);
+            Connection = factory.CreateConnection();
+            Connection.ConnectionString = connectionString;
+        }
+
+        public SectorDb(IDbConnection connection)
+        {
+            Connection = connection;
+        }
+
+        public static SectorDb FromDbInfo(string dbType, string dbHostname,
+                                          string dbUser, string dbName, string dbPass)
+        {
+            string connectionString = DbUtils.GetConnectionString(dbHostname, dbUser, dbName, dbPass);
+            return new Sector.SectorDb(dbType, connectionString);
         }
 
         public void CreateMigrationTable()
         {
-            // The trick here is to use schema export which practically does a
-            // DROP/CREATE. We create the factory with only one mapping and
-            // dispose of it immediately after.
-            Fluently.Configure()
-                    .Database(dbConfigurer)
-                    .Mappings(x => x.FluentMappings.Add<MigrateVersionMap>())
-                    .ExposeConfiguration(cfg => new SchemaExport(cfg).Create(script: false, export: true))
-                    .BuildSessionFactory()
-                    .Dispose();
+            using (var cmd = Connection.CreateCommand())
+            {
+                const string sql = "CREATE TABLE {0}("
+                                 + "repository_id VARCHAR(255) PRIMARY KEY NOT NULL,"
+                                 + "repository_path VARCHAR(255),"
+                                 + "version integer)";
+                cmd.CommandText = string.Format(sql, TableName);
+                cmd.ExecuteNonQuery();
+            }
+        }
+
+        public void Connect()
+        {
+            Connection.Open();
+        }
+
+        public void Dispose()
+        {
+            Connection.Close();
         }
     }
 }
