@@ -31,7 +31,8 @@ namespace Sector.Tests
             bool success = migrateApi.IsVersionControlled(repository);
             Assert.IsFalse(success);
 
-            using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+            using (var dbConn = TestUtils.OpenDbconnection())
+            using (var dbCommand = dbConn.CreateCommand())
             {
                 string templ = "INSERT INTO migrate_version (repository_id, repository_path, version) VALUES('{0}', '{1}', '{2}')";
                 dbCommand.CommandText = string.Format(templ, repository.RepositoryId, repository.RepositoryPath, 0);
@@ -55,7 +56,8 @@ namespace Sector.Tests
             Assert.IsTrue(migrateApi.IsVersionControlled(repository));
             Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
 
-            using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+            using (var dbConn = TestUtils.OpenDbconnection())
+            using (var dbCommand = dbConn.CreateCommand())
             {
                 string templ = "SELECT * FROM {0} WHERE repository_id = '{1}'";
                 dbCommand.CommandText = string.Format(templ, SectorDb.TableName, repository.RepositoryId);
@@ -98,7 +100,7 @@ namespace Sector.Tests
 
             using (var dbConn = TestUtils.OpenDbconnection())
             {
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     string templ = "INSERT INTO migrate_version (repository_id, repository_path, version) VALUES('{0}', '{1}', '{2}')";
                     dbCommand.CommandText = string.Format(templ, repository.RepositoryId, repository.RepositoryPath, 0);
@@ -108,7 +110,7 @@ namespace Sector.Tests
                     Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
                 }
 
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     string templ = "UPDATE migrate_version SET version = 10 WHERE repository_id = '{0}'";
                     dbCommand.CommandText = string.Format(templ, repository.RepositoryId);
@@ -133,7 +135,7 @@ namespace Sector.Tests
             {
                 Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
 
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM testie";
 
@@ -146,14 +148,14 @@ namespace Sector.Tests
                 migrateApi.Upgrade(repository, 1);
                 Assert.AreEqual(1, migrateApi.GetDbVersion(repository));
 
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM testie";
                     dbCommand.ExecuteNonQuery();
                 }
 
                 // moon comes in in version 2, so shouldnt be there now.
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM moon";
 
@@ -165,13 +167,13 @@ namespace Sector.Tests
                 migrateApi.Upgrade(repository, 2);
                 Assert.AreEqual(2, migrateApi.GetDbVersion(repository));
 
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM testie";
                     dbCommand.ExecuteNonQuery();
                 }
 
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM moon";
                     dbCommand.ExecuteNonQuery();
@@ -191,7 +193,7 @@ namespace Sector.Tests
             using (var dbConn = TestUtils.OpenDbconnection())
             {
                 Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM testie";
 
@@ -203,13 +205,13 @@ namespace Sector.Tests
                 migrateApi.Upgrade(repository, 2);
                 Assert.AreEqual(2, migrateApi.GetDbVersion(repository));
 
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM testie";
                     dbCommand.ExecuteNonQuery();
                 }
 
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM moon";
                     dbCommand.ExecuteNonQuery();
@@ -229,7 +231,7 @@ namespace Sector.Tests
             using (var dbConn = TestUtils.OpenDbconnection())
             {
                 Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM testie";
 
@@ -241,13 +243,13 @@ namespace Sector.Tests
                 migrateApi.Upgrade(repository);
                 Assert.AreEqual(2, migrateApi.GetDbVersion(repository));
 
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM testie";
                     dbCommand.ExecuteNonQuery();
                 }
 
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM moon";
                     dbCommand.ExecuteNonQuery();
@@ -269,13 +271,13 @@ namespace Sector.Tests
                 migrateApi.Upgrade(repository, 2);
                 Assert.AreEqual(2, migrateApi.GetDbVersion(repository));
 
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM testie";
                     dbCommand.ExecuteNonQuery();
                 }
 
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM moon";
                     dbCommand.ExecuteNonQuery();
@@ -284,7 +286,7 @@ namespace Sector.Tests
                 migrateApi.Downgrade(repository, 0);
                 Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
 
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM testie";
 
@@ -293,7 +295,7 @@ namespace Sector.Tests
                     });
                 }
 
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM moon";
 
@@ -318,13 +320,13 @@ namespace Sector.Tests
                 migrateApi.Upgrade(repository, 2);
                 Assert.AreEqual(2, migrateApi.GetDbVersion(repository));
 
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM testie";
                     dbCommand.ExecuteNonQuery();
                 }
 
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM moon";
                     dbCommand.ExecuteNonQuery();
@@ -333,13 +335,13 @@ namespace Sector.Tests
                 migrateApi.Downgrade(repository, 1);
                 Assert.AreEqual(1, migrateApi.GetDbVersion(repository));
 
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM testie";
                     dbCommand.ExecuteNonQuery();
                 }
 
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM moon";
 
@@ -351,7 +353,7 @@ namespace Sector.Tests
                 migrateApi.Downgrade(repository, 0);
                 Assert.AreEqual(0, migrateApi.GetDbVersion(repository));
 
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM testie";
 
@@ -360,7 +362,7 @@ namespace Sector.Tests
                     });
                 }
 
-                using (var dbCommand = TestUtils.OpenDbconnection().CreateCommand())
+                using (var dbCommand = dbConn.CreateCommand())
                 {
                     dbCommand.CommandText = "SELECT * FROM moon";
 
