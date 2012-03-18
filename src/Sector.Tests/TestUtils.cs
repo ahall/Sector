@@ -1,6 +1,7 @@
 using System;
 using System.IO;
-using System.Data.SQLite;
+using Mono.Data.Sqlite;
+
 
 namespace Sector.Tests
 {
@@ -47,12 +48,12 @@ namespace Sector.Tests
             return new SectorDb(OpenDbconnection());
         }
 
-        public static SQLiteConnection GetDbconnection()
+        public static SqliteConnection GetDbconnection()
         {
-            return new SQLiteConnection("Data Source= " + GetDbPath());
+            return new SqliteConnection("Data Source=" + GetDbPath());
         }
 
-        public static SQLiteConnection OpenDbconnection()
+        public static SqliteConnection OpenDbconnection()
         {
             var conn = GetDbconnection();
             conn.Open();

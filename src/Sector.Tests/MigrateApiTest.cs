@@ -2,7 +2,7 @@ using System;
 using NUnit.Framework;
 using Sector;
 using System.IO;
-using System.Data.SQLite;
+using Mono.Data.Sqlite;
 
 namespace Sector.Tests
 {
@@ -78,7 +78,7 @@ namespace Sector.Tests
             var sectorDb = TestUtils.MakeSectorDb();
             var repository = TestUtils.MakeRepository();
 
-            Assert.Throws<SQLiteException>(delegate {
+            Assert.Throws<SqliteException>(delegate {
                 MigrateApi migrateApi = new MigrateApi(sectorDb);
                 migrateApi.GetDbVersion(repository);
             });
@@ -137,7 +137,7 @@ namespace Sector.Tests
                 {
                     dbCommand.CommandText = "SELECT * FROM testie";
 
-                    Assert.Throws<SQLiteException>(delegate {
+                    Assert.Throws<SqliteException>(delegate {
                         dbCommand.ExecuteNonQuery();
                     });
                 }
@@ -157,7 +157,7 @@ namespace Sector.Tests
                 {
                     dbCommand.CommandText = "SELECT * FROM moon";
 
-                    Assert.Throws<SQLiteException>(delegate {
+                    Assert.Throws<SqliteException>(delegate {
                         dbCommand.ExecuteNonQuery();
                     });
                 }
@@ -195,7 +195,7 @@ namespace Sector.Tests
                 {
                     dbCommand.CommandText = "SELECT * FROM testie";
 
-                    Assert.Throws<SQLiteException>(delegate {
+                    Assert.Throws<SqliteException>(delegate {
                         dbCommand.ExecuteNonQuery();
                     });
                 }
@@ -233,7 +233,7 @@ namespace Sector.Tests
                 {
                     dbCommand.CommandText = "SELECT * FROM testie";
 
-                    Assert.Throws<SQLiteException>(delegate {
+                    Assert.Throws<SqliteException>(delegate {
                         dbCommand.ExecuteNonQuery();
                     });
                 }
@@ -288,7 +288,7 @@ namespace Sector.Tests
                 {
                     dbCommand.CommandText = "SELECT * FROM testie";
 
-                    Assert.Throws<SQLiteException>(delegate {
+                    Assert.Throws<SqliteException>(delegate {
                         dbCommand.ExecuteNonQuery();
                     });
                 }
@@ -297,7 +297,7 @@ namespace Sector.Tests
                 {
                     dbCommand.CommandText = "SELECT * FROM moon";
 
-                    Assert.Throws<SQLiteException>(delegate {
+                    Assert.Throws<SqliteException>(delegate {
                         dbCommand.ExecuteNonQuery();
                     });
                 }
@@ -343,7 +343,7 @@ namespace Sector.Tests
                 {
                     dbCommand.CommandText = "SELECT * FROM moon";
 
-                    Assert.Throws<SQLiteException>(delegate {
+                    Assert.Throws<SqliteException>(delegate {
                         dbCommand.ExecuteNonQuery();
                     });
                 }
@@ -355,7 +355,7 @@ namespace Sector.Tests
                 {
                     dbCommand.CommandText = "SELECT * FROM testie";
 
-                    Assert.Throws<SQLiteException>(delegate {
+                    Assert.Throws<SqliteException>(delegate {
                         dbCommand.ExecuteNonQuery();
                     });
                 }
@@ -364,7 +364,7 @@ namespace Sector.Tests
                 {
                     dbCommand.CommandText = "SELECT * FROM moon";
 
-                    Assert.Throws<SQLiteException>(delegate {
+                    Assert.Throws<SqliteException>(delegate {
                         dbCommand.ExecuteNonQuery();
                     });
                 }

@@ -71,7 +71,7 @@ namespace Sector
                 throw new ArgumentException("repository_id not found in sector config");
             }
 
-            return "";
+            return repoId;
         }
 
         private void ScanFiles()

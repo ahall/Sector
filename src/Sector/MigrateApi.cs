@@ -113,10 +113,22 @@ namespace Sector
                     throw new SectorException("Unable to fetch the db version");
                 }
 
+                int version = 0;
+
                 // Needed, sqlite returns as long as casting object which is long to
-                // int is not allowed.
-                long retLong = (long)ret;
-                return (int)retLong;
+                // int is not allowed. Therefore this silly typecheck is needed,
+                // be nice if this can be solved in a better way.
+                if (ret.GetType() == typeof(int))
+                {
+                    version = (int)ret;
+                }
+                else
+                {
+                    long temp = (long)ret;
+                    version = (int)temp;
+                }
+
+                return version;
             }
         }
 

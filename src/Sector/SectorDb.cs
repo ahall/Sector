@@ -18,7 +18,7 @@ namespace Sector
 
         public SectorDb(string dbType, string connectionString)
         {
-            string providerName = "System.Data.SQLite.dll";
+            string providerName = "Mono.Data.Sqlite";
 
             if (dbType == "postgresql")
             {
